@@ -1,0 +1,46 @@
+==========================================================================
+ Netzwerk-Exposition: db01.example.com | openSUSE Leap 15.6 | 2026-11-08 10:10:46
+==========================================================================
+Interfaces:
+  eth0           privat       Zone: public               10.20.0.21
+  Default-Route ueber: eth0
+
+firewalld: aktiv (Default-Zone: public). Aktive Zonen:
+  admin        target=default | Quellen: 10.50.0.0/24 | Services:  | Ports: 9100/tcp 9187/tcp
+  public       target=default | Services: dhcpv6-client ssh | Ports: 
+               Rich: rule family="ipv4" source address="10.20.0.0/24" service name="postgresql" accept
+
+Lauschende Dienste:
+PROTO  PORT  BIND       PROZESS          UNIT  IFACE  NETZ    ZONE    FIREWALL                          BEWERTUNG
+tcp    22    0.0.0.0    sshd             -     eth0   privat  public  offen                             INTERN
+tcp    5432  0.0.0.0    postgres         -     eth0   privat  public  nur-von:10.20.0.0/24(Rich-Rule)   INTERN
+tcp    9100  0.0.0.0    node_exporter    -     eth0   privat  public  nur-von:10.50.0.0/24(Zone-admin)  INTERN
+tcp    9187  0.0.0.0    postgres_export  -     eth0   privat  public  nur-von:10.50.0.0/24(Zone-admin)  INTERN
+tcp    111   0.0.0.0    rpcbind          -     eth0   privat  public  gesperrt                          BLOCKIERT
+udp    111   0.0.0.0    rpcbind          -     eth0   privat  public  gesperrt                          BLOCKIERT
+tcp    6379  127.0.0.1  redis-server     -     lo     lokal   -       -                                 LOKAL
+
+Zusammenfassung je Dienst (hoechste Einstufung ueber alle Interfaces):
+  INTERN     tcp/22     sshd             -                        via eth0             offen
+  INTERN     tcp/5432   postgres         -                        via eth0             nur-von:10.20.0.0/24(Rich-Rule)
+  INTERN     tcp/9100   node_exporter    -                        via eth0             nur-von:10.50.0.0/24(Zone-admin)
+  INTERN     tcp/9187   postgres_export  -                        via eth0             nur-von:10.50.0.0/24(Zone-admin)
+  BLOCKIERT  tcp/111    rpcbind          -                        via eth0             gesperrt
+  BLOCKIERT  udp/111    rpcbind          -                        via eth0             gesperrt
+  LOKAL      tcp/6379   redis-server     -                        via lo               -
+
+Legende: EXTERN    = oeffentliche IP am Interface und Firewall offen (ggf. nur fuer oeffentliche Quellen)
+         INTERN    = private IP am Interface oder nur fuer private Quellnetze freigegeben
+         PRUEFEN   = Freigabe fuer ipset/MAC/NOT-Quelle, Sperr-Rich-Rule ohne Quelle oder unklare
+                     Interface-Zuordnung (z.B. IP auf lo, nonlocal bind) -> manuell pruefen
+         BLOCKIERT = lauscht, aber von firewalld gesperrt | LOKAL = nur Loopback
+         Private IPs koennen per NAT/Portweiterleitung am Perimeter trotzdem von aussen erreichbar sein.
+
+# Maschinenlesbar: INV;host;proto;port;bind;prozess;unit;iface;netz;zone;firewall;bewertung
+INV;db01.example.com;tcp;22;0.0.0.0;sshd;-;eth0;privat;public;offen;INTERN
+INV;db01.example.com;tcp;111;0.0.0.0;rpcbind;-;eth0;privat;public;gesperrt;BLOCKIERT
+INV;db01.example.com;udp;111;0.0.0.0;rpcbind;-;eth0;privat;public;gesperrt;BLOCKIERT
+INV;db01.example.com;tcp;5432;0.0.0.0;postgres;-;eth0;privat;public;nur-von:10.20.0.0/24(Rich-Rule);INTERN
+INV;db01.example.com;tcp;6379;127.0.0.1;redis-server;-;lo;lokal;-;-;LOKAL
+INV;db01.example.com;tcp;9100;0.0.0.0;node_exporter;-;eth0;privat;public;nur-von:10.50.0.0/24(Zone-admin);INTERN
+INV;db01.example.com;tcp;9187;0.0.0.0;postgres_export;-;eth0;privat;public;nur-von:10.50.0.0/24(Zone-admin);INTERN

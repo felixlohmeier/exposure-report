@@ -59,9 +59,12 @@ Rundeck-Log der Ausführung herunterladen (*Log Output* → *Download*) und die
 `INV`-Zeilen herausfiltern:
 
 ```bash
-grep -h '^INV;' rundeck-*.log | cut -d';' -f2- > exposure.csv      # Semikolon-CSV
+{ echo "host;proto;port;bind;prozess;unit;iface;netz;zone;firewall;bewertung"
+  grep -h '^INV;' rundeck-*.log | cut -d';' -f2-; } > exposure.csv  # Semikolon-CSV
 grep -h '^INV;' rundeck-*.log | awk -F';' '$12=="EXTERN"'            # nur extern erreichbare
 ```
+
+Ein vollständiges Beispiel mit zwei Servern (Logs und CSV) liegt in [`example/`](example/).
 
 ## Was ausgewertet wird
 
