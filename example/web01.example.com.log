@@ -1,0 +1,68 @@
+==========================================================================
+ Netzwerk-Exposition: web01.example.com | openSUSE Leap 15.6 | 2026-11-08 10:10:43
+==========================================================================
+Interfaces:
+  eth0           oeffentlich  Zone: public               203.0.113.10
+  eth1           privat       Zone: internal             10.20.0.11
+  Default-Route ueber: eth0
+
+firewalld: aktiv (Default-Zone: public). Aktive Zonen:
+  internal     target=default | Services: dhcpv6-client mdns samba-client ssh | Ports: 9100/tcp
+  public       target=default | Services: dhcpv6-client http https | Ports: 
+               Rich: rule family="ipv4" source address="198.51.100.20" port port="8443" protocol="tcp" accept
+               Rich: rule family="ipv4" source ipset="monitoring" port port="161" protocol="udp" accept
+
+Lauschende Dienste:
+PROTO  PORT  BIND       PROZESS        UNIT  IFACE  NETZ         ZONE      FIREWALL                             BEWERTUNG
+tcp    80    0.0.0.0    nginx          -     eth0   oeffentlich  public    offen                                EXTERN
+tcp    443   0.0.0.0    nginx          -     eth0   oeffentlich  public    offen                                EXTERN
+tcp    8443  0.0.0.0    java           -     eth0   oeffentlich  public    nur-von:198.51.100.20(Rich-Rule)     EXTERN
+udp    161   0.0.0.0    snmpd          -     eth0   oeffentlich  public    nur-von:ipset:monitoring(Rich-Rule)  PRUEFEN
+tcp    22    0.0.0.0    sshd           -     eth1   privat       internal  offen                                INTERN
+tcp    9100  0.0.0.0    node_exporter  -     eth1   privat       internal  offen                                INTERN
+tcp    22    0.0.0.0    sshd           -     eth0   oeffentlich  public    gesperrt                             BLOCKIERT
+tcp    80    0.0.0.0    nginx          -     eth1   privat       internal  gesperrt                             BLOCKIERT
+udp    161   0.0.0.0    snmpd          -     eth1   privat       internal  gesperrt                             BLOCKIERT
+tcp    443   0.0.0.0    nginx          -     eth1   privat       internal  gesperrt                             BLOCKIERT
+tcp    8080  0.0.0.0    java           -     eth0   oeffentlich  public    gesperrt                             BLOCKIERT
+tcp    8080  0.0.0.0    java           -     eth1   privat       internal  gesperrt                             BLOCKIERT
+tcp    8443  0.0.0.0    java           -     eth1   privat       internal  gesperrt                             BLOCKIERT
+tcp    9100  0.0.0.0    node_exporter  -     eth0   oeffentlich  public    gesperrt                             BLOCKIERT
+udp    323   127.0.0.1  chronyd        -     lo     lokal        -         -                                    LOKAL
+tcp    9000  127.0.0.1  php-fpm        -     lo     lokal        -         -                                    LOKAL
+
+Zusammenfassung je Dienst (hoechste Einstufung ueber alle Interfaces):
+  EXTERN     tcp/80     nginx            -                        via eth0             offen
+  EXTERN     tcp/443    nginx            -                        via eth0             offen
+  EXTERN     tcp/8443   java             -                        via eth0             nur-von:198.51.100.20(Rich-Rule)
+  PRUEFEN    udp/161    snmpd            -                        via eth0             nur-von:ipset:monitoring(Rich-Rule)
+  INTERN     tcp/22     sshd             -                        via eth1             offen
+  INTERN     tcp/9100   node_exporter    -                        via eth1             offen
+  BLOCKIERT  tcp/8080   java             -                        via eth0,eth1        gesperrt
+  LOKAL      udp/323    chronyd          -                        via lo               -
+  LOKAL      tcp/9000   php-fpm          -                        via lo               -
+
+Legende: EXTERN    = oeffentliche IP am Interface und Firewall offen (ggf. nur fuer oeffentliche Quellen)
+         INTERN    = private IP am Interface oder nur fuer private Quellnetze freigegeben
+         PRUEFEN   = Freigabe fuer ipset/MAC/NOT-Quelle, Sperr-Rich-Rule ohne Quelle oder unklare
+                     Interface-Zuordnung (z.B. IP auf lo, nonlocal bind) -> manuell pruefen
+         BLOCKIERT = lauscht, aber von firewalld gesperrt | LOKAL = nur Loopback
+         Private IPs koennen per NAT/Portweiterleitung am Perimeter trotzdem von aussen erreichbar sein.
+
+# Maschinenlesbar: INV;host;proto;port;bind;prozess;unit;iface;netz;zone;firewall;bewertung
+INV;web01.example.com;tcp;22;0.0.0.0;sshd;-;eth0;oeffentlich;public;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;22;0.0.0.0;sshd;-;eth1;privat;internal;offen;INTERN
+INV;web01.example.com;tcp;80;0.0.0.0;nginx;-;eth0;oeffentlich;public;offen;EXTERN
+INV;web01.example.com;tcp;80;0.0.0.0;nginx;-;eth1;privat;internal;gesperrt;BLOCKIERT
+INV;web01.example.com;udp;161;0.0.0.0;snmpd;-;eth0;oeffentlich;public;nur-von:ipset:monitoring(Rich-Rule);PRUEFEN
+INV;web01.example.com;udp;161;0.0.0.0;snmpd;-;eth1;privat;internal;gesperrt;BLOCKIERT
+INV;web01.example.com;udp;323;127.0.0.1;chronyd;-;lo;lokal;-;-;LOKAL
+INV;web01.example.com;tcp;443;0.0.0.0;nginx;-;eth0;oeffentlich;public;offen;EXTERN
+INV;web01.example.com;tcp;443;0.0.0.0;nginx;-;eth1;privat;internal;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;8080;0.0.0.0;java;-;eth0;oeffentlich;public;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;8080;0.0.0.0;java;-;eth1;privat;internal;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;8443;0.0.0.0;java;-;eth0;oeffentlich;public;nur-von:198.51.100.20(Rich-Rule);EXTERN
+INV;web01.example.com;tcp;8443;0.0.0.0;java;-;eth1;privat;internal;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;9000;127.0.0.1;php-fpm;-;lo;lokal;-;-;LOKAL
+INV;web01.example.com;tcp;9100;0.0.0.0;node_exporter;-;eth0;oeffentlich;public;gesperrt;BLOCKIERT
+INV;web01.example.com;tcp;9100;0.0.0.0;node_exporter;-;eth1;privat;internal;offen;INTERN
